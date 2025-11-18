@@ -15,10 +15,6 @@ def init_state():
         st.session_state.df_ventas = pd.DataFrame(columns=["Fecha","Producto","Cantidad","Comprador","Talla","PrecioVenta"])
     if "df_gastos" not in st.session_state:
         st.session_state.df_gastos = pd.DataFrame(columns=["Fecha","Tipo","Monto","Nota"])
-    if "df_clientes" not in st.session_state:
-        st.session_state.df_clientes = pd.DataFrame(columns=["Nombre","Contacto","Notas"])
-    if "df_proveedores" not in st.session_state:
-        st.session_state.df_proveedores = pd.DataFrame(columns=["Nombre","Contacto","Notas"])
     if "low_stock_threshold" not in st.session_state:
         st.session_state.low_stock_threshold = 5
 
@@ -90,19 +86,14 @@ tab_inv, tab_sales, tab_exp, tab_results = st.tabs(["🗃️ Inventario", "🧾 
 # ---------------- Inventario ----------------
 with tab_inv:
     st.subheader("Agregar producto")
-    c1, c2, c3, c4 = st.columns([2,2,2,2])
-    with c1:
-        nombre = st.text_input("Nombre", key="inv_nombre")
-        categoria = st.text_input("Categoría", key="inv_categoria")
-    with c2:
-        codigo = st.text_input("Código", key="inv_codigo")
-        proveedor = st.text_input("Proveedor", key="inv_proveedor")
-    with c3:
-        stock = st.number_input("Stock inicial", min_value=0, value=0, step=1, key="inv_stock")
-        precio = st.number_input("Precio unitario (venta)", min_value=0.0, value=0.0, step=100.0, key="inv_precio")
-    with c4:
-        costo = st.number_input("Costo directo (unitario)", min_value=0.0, value=0.0, step=100.0, key="inv_costo")
-    if st.button("Agregar producto", type="primary", key="inv_add"):
+    nombre = st.text_input("Nombre", key="inv_nombre")
+    codigo = st.text_input("Código", key="inv_codigo")
+    categoria = st.text_input("Categoría", key="inv_categoria")
+    proveedor = st.text_input("Proveedor", key="inv_proveedor")
+    stock = st.number_input("Stock inicial", min_value=0, value=0, step=1, key="inv_stock")
+    precio = st.number_input("Precio unitario (venta)", min_value=0.0, value=0.0, step=100.0, key="inv_precio")
+    costo = st.number_input("Costo directo (unitario)", min_value=0.0, value=0.0, step=100.0, key="inv_costo")
+    if st.button("Agregar producto", key="inv_add"):
         if nombre:
             add_product(nombre, codigo, categoria, stock, precio, costo, proveedor)
             st.success("Producto agregado.")
@@ -119,40 +110,26 @@ with tab_inv:
         inv_view = inv_view[mask]
     st.dataframe(inv_view, use_container_width=True)
 
-    low_df = st.session_state.df_inventario[st.session_state.df_inventario["Stock"] <= st.session_state.low_stock_threshold]
-    if not low_df.empty:
-        st.warning("⚠️ Stock bajo")
-        st.dataframe(low_df, use_container_width=True)
-
 # ---------------- Ventas ----------------
 with tab_sales:
     st.subheader("Registrar venta múltiple")
-    if st.session_state.df_inventario.empty:
-        st.info("Agrega productos primero.")
-    else:
-        fecha_v = st.date_input("Fecha", datetime.today(), key="ventas_fecha")
-        comprador = st.text_input("Nombre del comprador", key="ventas_comprador")
-        num_items = st.number_input("Número de productos en esta venta", min_value=1, value=1, step=1, key="ventas_num_items")
+    fecha_v = st.date_input("Fecha", datetime.today(), key="ventas_fecha")
+    comprador = st.text_input("Nombre del comprador", key="ventas_comprador")
+    num_items = st.number_input("Número de productos", min_value=1, value=1, step=1, key="ventas_num_items")
 
-        items = []
-        for i in range(num_items):
-            st.markdown(f"**Producto {i+1}**")
-            c1, c2, c3, c4 = st.columns([2,1,1,1])
-            with c1:
-                producto = st.selectbox(f"Producto {i+1}", st.session_state.df_inventario["Producto"].tolist(), key=f"ventas_producto_{i}")
-            with c2:
-                cantidad = st.number_input(f"Cantidad {i+1}", min_value=1, value=1, step=1, key=f"ventas_cantidad_{i}")
-            with c3:
-                talla = st.text_input(f"Talla {i+1}", key=f"ventas_talla_{i}")
-            with c4:
-                precio_venta = st.number_input(f"Precio venta {i+1}", min_value=0.0, value=0.0, step=100.0, key=f"ventas_precio_{i}")
-            items.append({"Producto": producto, "Cantidad": cantidad, "Talla": talla, "PrecioVenta": precio_venta})
+    items = []
+    for i in range(num_items):
+        st.markdown(f"**Producto {i+1}**")
+        producto = st.selectbox(f"Producto {i+1}", st.session_state.df_inventario["Producto"].tolist(), key=f"ventas_producto_{i}")
+        cantidad = st.number_input(f"Cantidad {i+1}", min_value=1, value=1, step=1, key=f"ventas_cantidad_{i}")
+        talla = st.text_input(f"Talla {i+1}", key=f"ventas_talla_{i}")
+        precio_venta = st.number_input(f"Precio venta {i+1}", min_value=0.0, value=0.0, step=100.0, key=f"ventas_precio_{i}")
+        items.append({"Producto": producto, "Cantidad": cantidad, "Talla": talla, "PrecioVenta": precio_venta})
 
-        if st.button("Registrar venta múltiple", type="secondary", key="ventas_registrar"):
-            for item in items:
-                ok = register_sale(fecha_v, item["Producto"], item["Cantidad"], comprador, item["Talla"], item["PrecioVenta"])
-                if ok:
-                    st.success(f"Venta registrada: {item['Producto']} x{item['Cantidad']} (Talla {item['Talla']})")
+    if st.button("Registrar venta múltiple", key="ventas_registrar"):
+        for item in items:
+            register_sale(fecha_v, item["Producto"], item["Cantidad"], comprador, item["Talla"], item["PrecioVenta"])
+        st.success("Venta registrada.")
 
     st.divider()
     st.subheader("Historial de ventas")
@@ -167,3 +144,31 @@ with tab_sales:
 with tab_exp:
     st.subheader("Registrar gasto")
     fecha_g = st.date_input("Fecha del gasto", datetime.today(), key="gastos_fecha")
+    tipo = st.selectbox("Tipo", ["Marketing","Envíos","Costos directos de producto","Otros"], key="gastos_tipo")
+    monto = st.number_input("Monto", min_value=0.0, value=0.0, step=100.0, key="gastos_monto")
+    nota = st.text_input("Nota", key="gastos_nota")
+    if st.button("Agregar gasto", key="gastos_add"):
+        add_expense(fecha_g, tipo, monto, nota)
+        st.success("Gasto registrado.")
+
+    st.divider()
+    st.subheader("Historial de gastos")
+    search_g = st.text_input("Buscar gasto", key="gastos_search")
+    g_view = st.session_state.df_gastos.copy()
+    if search_g:
+        mask = g_view.apply(lambda r: search_g.lower() in str(r.values).lower(), axis=1)
+        g_view = g_view[mask]
+    st.dataframe(g_view, use_container_width=True)
+
+# ---------------- Estado de resultados ----------------
+with tab_results:
+    st.subheader("Estado de resultados")
+    er_ini = st.date_input("Desde", value=datetime.today().replace(day=1), key="er_desde")
+    er_fin = st.date_input("Hasta", value=datetime.today(), key="er_hasta")
+
+    sales = st.session_state.df_ventas.copy()
+    exp = st.session_state.df_gastos.copy()
+
+    if not sales.empty:
+        sales["Fecha"] = pd.to_datetime(sales["Fecha"])
+        sales_f = sales[(sales["Fecha"] >= pd.to_datetime(er_ini)) & (sales["Fecha"] <= pd.to_datetime(er_fin))]
