@@ -166,4 +166,4 @@ with tab_sales:
 # ---------------- Gastos ----------------
 with tab_exp:
     st.subheader("Registrar gasto")
-    fecha_g = st.date_input("Fecha del gasto", datetime.today(), key="g
+    fecha_g = st.date_input("Fecha del gasto", datetime.today(), key="gastos_fecha")
